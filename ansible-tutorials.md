@@ -1,99 +1,142 @@
-Ansible tutorial
+# Ansible Tutorial
 
-What is Ansible ?
-Ansible is an open-source automation tool.
+## What is Ansible?
 
-what is the use of ansible ?
-1) configuration management
-2) application deployment
-3) server provisioning
+Ansible is an open-source automation tool used for:
+
+- Configuration management  
+- Application deployment  
+- Server provisioning  
 
 It helps automate repetitive tasks and manage multiple systems from a central location.
 
-to set the hostname => sudo hostnamectl set-hostname <new-hostname>
+---
 
-SSH passwordless authentication:
-from your controller node => run command 
+## Set the Hostname
+
+To set the hostname:
+
+```bash
+sudo hostnamectl set-hostname <new-hostname>
+```
+
+---
+
+## SSH Passwordless Authentication
+
+From your **controller node**, run:
+
+```bash
 ssh-keygen
+```
 
-then go to .ssh directory , there we can see 3 files authorised_keys , .pub file and pem file 
+Navigate to the `.ssh` directory where you will find:
 
-cat the .pub file and copy the content , now in another terminal connect to managed node 1 and go to .ssh then open authorised_keys and paste the key which is copied from controller node to authorised_keys of managed node 1
-follow same process again for managed node 2
+- `id_rsa` (private key)  
+- `id_rsa.pub` (public key)  
+- `authorized_keys` (on managed node)
 
-once done , we can do ssh ubuntu@<ip of managed node 1> if it is successful our setup is correct 
+To configure passwordless authentication:
 
-Installing Ansible on Ubuntu:
+1. Copy the contents of the `id_rsa.pub` file from the controller node:
+   ```bash
+   cat ~/.ssh/id_rsa.pub
+   ```
+2. SSH into the **managed node**:
+   ```bash
+   ssh ubuntu@<managed-node-ip>
+   ```
+3. On the managed node, go to `~/.ssh/` and paste the copied key into the `authorized_keys` file.
 
-$ sudo apt update
-$ sudo apt install software-properties-common
-$ sudo add-apt-repository --yes --update ppa:ansible/ansible
-$ sudo apt install ansible
+Repeat for all managed nodes.
 
-=> After installing ansible ccheck for ansible --version
+To verify:
 
-ubuntu@controller-node:~$ ansible --version
+```bash
+ssh ubuntu@<managed-node-ip>
+```
+
+If successful, your setup is correct.
+
+---
+
+## Installing Ansible on Ubuntu
+
+```bash
+sudo apt update
+sudo apt install software-properties-common
+sudo add-apt-repository --yes --update ppa:ansible/ansible
+sudo apt install ansible
+```
+
+After installation, verify Ansible version:
+
+```bash
+ansible --version
+```
+
+Example output:
+
+```
 ansible [core 2.18.6]
   config file = /etc/ansible/ansible.cfg
   configured module search path = ['/home/ubuntu/.ansible/plugins/modules', '/usr/share/ansible/plugins/modules']
   ansible python module location = /usr/lib/python3/dist-packages/ansible
   ansible collection location = /home/ubuntu/.ansible/collections:/usr/share/ansible/collections
   executable location = /usr/bin/ansible
-  python version = 3.12.3 (main, Feb  4 2025, 14:48:35) [GCC 13.3.0] (/usr/bin/python3)
+  python version = 3.12.3
   jinja version = 3.1.2
   libyaml = True
+```
 
-now go to the path /etc/ansible
+---
 
-there we can see ansible.cfg  hosts  roles
+## Inventory and Hosts Configuration
 
-now open hosts file
+Navigate to:
 
-update hosts file like below 
+```bash
+cd /etc/ansible/
+```
 
-  GNU nano 7.2                                                            hosts                                                                     [webservers]
+Files present:
+
+- `ansible.cfg`  
+- `hosts`  
+- `roles/`  
+
+### Editing the Default Hosts File
+
+```ini
+[webservers]
 172.31.1.4
 172.31.4.249
 172.31.14.251
+```
 
+### Testing Connection
 
-ubuntu@controller-node:~$ ansible all -m ping
-[WARNING]: Platform linux on host 172.31.4.249 is using the discovered Python interpreter at /usr/bin/python3.12, but future installation of
-another Python interpreter could change the meaning of that path. See https://docs.ansible.com/ansible-
-core/2.18/reference_appendices/interpreter_discovery.html for more information.
-172.31.4.249 | SUCCESS => {
-    "ansible_facts": {
-        "discovered_interpreter_python": "/usr/bin/python3.12"
-    },
-    "changed": false,
-    "ping": "pong"
-}
-[WARNING]: Platform linux on host 172.31.14.251 is using the discovered Python interpreter at /usr/bin/python3.12, but future installation of
-another Python interpreter could change the meaning of that path. See https://docs.ansible.com/ansible-
-core/2.18/reference_appendices/interpreter_discovery.html for more information.
-172.31.14.251 | SUCCESS => {
-    "ansible_facts": {
-        "discovered_interpreter_python": "/usr/bin/python3.12"
-    },
-    "changed": false,
-    "ping": "pong"
-}
-[WARNING]: Platform linux on host 172.31.1.4 is using the discovered Python interpreter at /usr/bin/python3.12, but future installation of another
-Python interpreter could change the meaning of that path. See https://docs.ansible.com/ansible-
-core/2.18/reference_appendices/interpreter_discovery.html for more information.
+```bash
+ansible all -m ping
+```
+
+Example Output:
+
+```json
 172.31.1.4 | SUCCESS => {
-    "ansible_facts": {
-        "discovered_interpreter_python": "/usr/bin/python3.12"
-    },
-    "changed": false,
     "ping": "pong"
 }
+```
 
+Warnings regarding Python interpreter can be safely ignored or resolved by defining interpreter path in config.
 
-if we do not want to use hosts file we can create our own inventory file and update the ip details
+---
 
-for example we have created a file testinventory and updated the ip details as below 
+## Using a Custom Inventory File
 
+You can create your own inventory file, e.g., `testinventory`:
+
+```ini
 [webservers]
 172.31.1.4
 
@@ -102,15 +145,19 @@ for example we have created a file testinventory and updated the ip details as b
 
 [backendserver]
 172.31.14.251
+```
 
-if we want to run any ansible command we shouuld mention the inventory file as well like below
+### Running with a Custom Inventory
 
+```bash
 ansible -i testinventory all -m ping
+```
 
-all indicates => all IP addresses which are mentioned in inventory files
+- `-i` specifies the inventory file.  
+- `all` targets all groups.  
+- `-m` specifies the module to run.  
+- `ping` is the module used to check connectivity.
 
-m indicates => module
+---
 
-ping => ping is module here
-
-
+Happy Automation with Ansible!
