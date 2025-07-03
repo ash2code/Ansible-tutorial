@@ -160,9 +160,85 @@ ansible -i testinventory all -m ping
 
 ---
 
-Ansible Architecture:
+## Ansible Architecture
 
-![image](https://github.com/user-attachments/assets/a9fdcbce-7711-4b50-a4af-7d3f180bebb9)
+![Ansible Architecture](https://github.com/user-attachments/assets/a9fdcbce-7711-4b50-a4af-7d3f180bebb9)
+
+### Controller Node:
+- Machine where Ansible is installed.
+- Controls the automation process.
+- Pushes configurations/commands to managed nodes.
+
+### Inventory File:
+- Lists all managed nodes.
+- Can contain IPs, hostnames, and groups.
+
+### Managed Nodes:
+- Remote systems managed by Ansible.
+- Ansible **does not need to be installed** on them.
+- Communication is **push-based** using SSH.
+
+---
+
+## Ad-Hoc Commands
+
+### Copy File
+
+```bash
+ansible -i <inventory> all -m copy -a "src=/path/to/file dest=/destination"
+```
+
+### Run Command
+
+```bash
+ansible -i <inventory> all -m command -a "ls"
+```
+
+### Common `command` Examples
+
+```bash
+ansible all -m command -a "find /tmp -name '*.txt'"
+ansible all -m command -a "grep -r 'pattern' /var/log"
+ansible all -m command -a "chmod 755 /path/to/file"
+ansible all -m command -a "chown user:group /path/to/file"
+ansible all -m command -a "mkdir -p /path/to/directory"
+```
+
+### Use `shell` for Redirection and Pipes
+
+```bash
+ansible -i <inventory> all -m shell -a "echo 'hello' >> file.txt"
+```
+
+### Fetch Files
+
+```bash
+ansible -i <inventory> all -m fetch -a "src=/remote/path/file.txt dest=/local/path"
+```
+
+---
+
+## Ansible Playbooks
+
+Create a YAML playbook file:
+
+```yaml
+---
+- name: my first ansible playbook
+  hosts: all
+  become: yes
+
+  tasks:
+    - name: hello world
+      debug:
+        msg: "hello world !"
+```
+
+Run the playbook:
+
+```bash
+ansible-playbook hello-world.yaml -i /path/to/inventory
+```
 
 
-Happy Automation with Ansible!
+Happy Automation with Ansible! 
