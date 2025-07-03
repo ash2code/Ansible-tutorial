@@ -160,4 +160,9 @@ ansible -i testinventory all -m ping
 
 ---
 
+Ansible Architecture:
+
+![image](https://github.com/user-attachments/assets/a9fdcbce-7711-4b50-a4af-7d3f180bebb9)
+
+
 Happy Automation with Ansible!
