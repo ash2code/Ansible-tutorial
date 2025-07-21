@@ -574,4 +574,231 @@ PLAY RECAP *********************************************************************
 - `rescued` - Tasks that were rescued from failure
 - `ignored` - Tasks that failed but were ignored
 
+# 📘 Ansible Practice Playbooks Guide
+
+This guide includes practical Ansible playbooks with explanations to help you learn key automation tasks such as installing packages, managing users, deploying applications, and more.
+
+---
+
+## 📦 1. Install Nginx
+
+### ✅ Objective
+
+Install the Nginx web server on all Ubuntu-based managed nodes.
+
+### 🧾 Playbook: `install-nginx.yaml`
+
+```yaml
+- name: Playbook for installing Nginx
+  hosts: all
+  become: yes
+
+  tasks:
+    - name: Update apt packages
+      apt:
+        update_cache: yes
+
+    - name: Install Nginx
+      apt:
+        name: nginx
+        state: present
+```
+
+---
+
+## ☕ 2. Install Java (only on Ubuntu)
+
+### ✅ Objective
+
+Install Java only if the system is running Ubuntu OS.
+
+### 🧾 Playbook: `install-java.yaml`
+
+```yaml
+- name: Install Java on Ubuntu machines
+  hosts: all
+  become: yes
+  gather_facts: yes
+
+  tasks:
+    - name: Update package cache
+      apt:
+        update_cache: yes
+
+    - name: Install Java only if OS is Ubuntu
+      apt:
+        name: openjdk-8-jdk
+        state: present
+      when: ansible_distribution == "Ubuntu"
+      register: java_status
+
+    - name: Confirm Java installation
+      debug:
+        msg: "Java installed successfully!"
+      when:
+        - java_status is succeeded
+        - java_status.changed
+```
+
+---
+
+## 👤 3. Add User Only If Not Exists
+
+### ✅ Objective
+
+Check whether the user "india" exists and create it if not.
+
+### 🧾 Playbook: `user-add.yaml`
+
+```yaml
+- name: Add user if not present
+  hosts: all
+  become: yes
+
+  tasks:
+    - name: Check if user "india" exists
+      shell: "grep '^india:' /etc/passwd"
+      register: userstatus
+      ignore_errors: true
+
+    - name: Inform if user exists
+      debug:
+        msg: "User already exists"
+      when: userstatus.rc == 0
+
+    - name: Create user "india"
+      shell: "useradd -m india"
+      register: useraddstatus
+      when: userstatus.rc != 0
+      ignore_errors: true
+
+    - name: Confirm user creation
+      debug:
+        msg: "User created successfully"
+      when:
+        - useraddstatus is defined
+        - useraddstatus.rc == 0
+```
+
+---
+
+## 🐳 4. Install Docker
+
+### ✅ Objective
+
+Install Docker (`docker.io` package) on all managed nodes.
+
+### 🧾 Playbook: `install-docker.yaml`
+
+```yaml
+- name: Install Docker
+  hosts: all
+  become: yes
+
+  tasks:
+    - name: Update the package cache
+      apt:
+        update_cache: yes
+
+    - name: Install docker.io
+      apt:
+        name: docker.io
+        state: present
+```
+
+---
+
+## 🛍 5. Deploy E-commerce App
+
+### ✅ Objective
+
+Deploy a local web application (`anon-ecommerce-website`) to `/var/www/html` on managed nodes—but only if Nginx is running.
+
+### 🧾 Playbook: `deploy-ecommerce.yaml`
+
+```yaml
+- name: Deploy E-commerce Application
+  hosts: all
+  become: yes
+
+  tasks:
+    - name: Check Nginx status
+      shell: "systemctl status nginx"
+      register: nginxstatus
+      ignore_errors: true
+
+    - name: Copy web app if Nginx is active
+      copy:
+        src: /home/ubuntu/anon-ecommerce-website
+        dest: /var/www/html
+      when: nginxstatus.rc == 0
+      register: deploymentstatus
+
+    - name: Report deployment result
+      debug:
+        msg: "Deployment is successful"
+      when:
+        - deploymentstatus is succeeded
+        - deploymentstatus.changed
+```
+
+---
+
+## 📊 6. System Facts with `gather_facts`
+
+### ✅ Objective
+
+Print the OS name and version using Ansible gathered facts.
+
+### 🧾 Playbook: `gather_facts_test.yaml`
+
+```yaml
+- name: Print system facts
+  hosts: all
+  become: yes
+  gather_facts: yes
+
+  tasks:
+    - name: Display OS distribution
+      debug:
+        msg: "OS is {{ ansible_distribution }}"
+
+    - name: Show distribution version
+      debug:
+        msg: "OS version is {{ ansible_distribution_version }}"
+```
+
+---
+
+## 🚀 Running Playbooks
+
+Run playbooks with:
+
+```bash
+ansible-playbook <playbook-name>.yaml -i inventory.ini --ask-become-pass
+```
+
+### Example:
+
+```bash
+ansible-playbook install-nginx.yaml -i inventory.ini --ask-become-pass
+```
+
+---
+
+## 📋 Summary
+
+| Playbook              | Purpose                                   |
+|------------------------|-------------------------------------------|
+| install-nginx.yaml     | Install and manage Nginx                  |
+| install-java.yaml      | Conditionally install Java on Ubuntu      |
+| user-add.yaml          | Create user only if not exists            |
+| install-docker.yaml    | Install Docker using Ubuntu package       |
+| deploy-ecommerce.yaml  | Deploy web app only if Nginx is running   |
+| gather_facts_test.yaml | Use Ansible facts to get system info      |
+
+---
+
+Happy automating with Ansible! 🚀
+
 Happy Automation with Ansible! 
