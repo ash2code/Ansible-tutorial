@@ -1,4 +1,5 @@
-commonly used Ansible modules
+**commonly used Ansible modules**
+
 These modules help you manage system-related tasks like users, groups, files, and packages.
 •	user: Manages user accounts.
 o	Example: ansible.builtin.user
