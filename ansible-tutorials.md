@@ -159,6 +159,7 @@ ansible -i testinventory all -m ping
 - `ping` is the module used to check connectivity.
 
 ---
+to run only for specific hostgroup => use --limit <hostgroupname>
 
 ## Ansible Architecture
 
