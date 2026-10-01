@@ -1166,3 +1166,222 @@ ok: [target-host] => (item=tulip) => {
 Happy automating with Ansible! 🚀
 
 Happy Automation with Ansible! 
+
+---
+
+# More Ansible Topics
+
+This tutorial covers the basic Ansible topics. The topics below are useful to learn next.
+
+## Topics to Learn Next
+
+- **Templates:** Use a template file to create a configuration file on a managed node. Example: create an Nginx page using a variable.
+- **Handlers:** Run a task only when another task changes something. Example: restart Nginx only after its configuration changes.
+- **Roles:** Keep tasks, variables, files, and templates in separate folders so playbooks can be reused.
+- **Inventory variables:** Use `group_vars` and `host_vars` to keep settings for different servers. Example: use a different port for test and production servers.
+- **Conditions and registered results:** Use `when` to run a task only when a condition is true. Example: install a package only on Ubuntu.
+- **Ansible Vault:** Encrypt passwords and other secrets so they are not stored as plain text.
+- **Check mode and tags:** Use `--check` to see possible changes before applying them. Use tags to run selected tasks.
+- **Error handling and rolling updates:** Handle task failures and update a few servers at a time with `serial`.
+- **Dynamic inventory:** Get server information from a cloud provider instead of writing every server address by hand.
+- **Testing:** Check playbooks with `ansible-playbook --syntax-check` and `ansible-lint`. Run these checks before deployment.
+- **Collections:** Install and use Ansible modules and roles that are provided in collections.
+
+## Real-Time Example: Deploy a Simple Nginx Website
+
+This playbook installs Nginx, creates a website, and reloads Nginx only when its server configuration changes.
+
+Save this playbook as `deploy-nginx.yaml`:
+
+```yaml
+---
+- name: Deploy a simple Nginx website
+  hosts: webservers
+  become: yes
+  vars:
+    page_title: "Welcome to My Website"
+
+  tasks:
+    - name: Install Nginx
+      apt:
+        name: nginx
+        state: present
+        update_cache: yes
+
+    - name: Create the website page
+      template:
+        src: templates/index.html.j2
+        dest: /var/www/html/index.html
+        mode: '0644'
+
+    - name: Configure Nginx to serve the website on port 8080
+      template:
+        src: templates/mywebsite.conf.j2
+        dest: /etc/nginx/conf.d/mywebsite.conf
+        mode: '0644'
+      notify: Reload Nginx
+
+    - name: Make sure Nginx is running and enabled
+      service:
+        name: nginx
+        state: started
+        enabled: yes
+
+  handlers:
+    - name: Reload Nginx
+      service:
+        name: nginx
+        state: reloaded
+```
+
+Create a folder named `templates` beside the playbook. Save this page as `templates/index.html.j2`:
+
+```html
+<html>
+  <body>
+    <h1>{{ page_title }}</h1>
+    <p>This website was deployed using Ansible.</p>
+  </body>
+</html>
+```
+
+Save this Nginx configuration as `templates/mywebsite.conf.j2`:
+
+```nginx
+server {
+  listen 8080;
+  server_name _;
+  root /var/www/html;
+  index index.html;
+}
+```
+
+Run the playbook:
+
+```bash
+ansible-playbook -i testinventory deploy-nginx.yaml
+```
+
+### What This Example Shows
+
+- `apt` installs Nginx only when it is not already installed.
+- `template` creates the website page and puts the value of `page_title` into it.
+- `notify` runs the handler only when the Nginx configuration changes. A reload applies the new configuration without stopping the service.
+- `service` makes sure Nginx is running and starts it automatically after a reboot.
+- Running the playbook again should not make changes if the server is already in the correct state. This is called **idempotency**.
+
+Practice explaining what happens if a task fails, how to test changes before applying them, and how to protect servers during an update.
+
+## Examples for Ansible Modules
+
+These examples cover the modules used in this tutorial. Ansible has many more modules. Change the host names and file paths to match your environment.
+
+### Ping Module
+
+Check whether Ansible can connect to the managed nodes:
+
+```bash
+ansible all -i testinventory -m ping
+```
+
+### Copy Module
+
+Copy a file from the controller to all managed nodes:
+
+```bash
+ansible all -i testinventory -m copy -a "src=./index.html dest=/tmp/index.html mode=0644"
+```
+
+### Command Module
+
+Run a simple command on all managed nodes. The `command` module does not use a shell, so pipes and redirects are not supported.
+
+```bash
+ansible all -i testinventory -m command -a "df -h"
+```
+
+### Shell Module
+
+Use the `shell` module when a shell feature such as a pipe is needed:
+
+```bash
+ansible all -i testinventory -m shell -a "df -h | grep /dev"
+```
+
+Use `command` instead of `shell` when shell features are not needed.
+
+### Fetch Module
+
+Copy a log file from each managed node to the controller. The source file must exist and be readable on the managed node.
+
+```bash
+ansible all -i testinventory -m fetch -a "src=/var/log/syslog dest=./logs/"
+```
+
+### APT Module
+
+Install Nginx on Ubuntu or Debian managed nodes:
+
+```yaml
+- name: Install Nginx
+  apt:
+    name: nginx
+    state: present
+    update_cache: yes
+  become: yes
+```
+
+### Debug Module
+
+Print a message while a playbook is running:
+
+```yaml
+- name: Show a message
+  debug:
+    msg: "Nginx setup is complete"
+```
+
+### Service Module
+
+Make sure Nginx is running and starts automatically after a reboot:
+
+```yaml
+- name: Make sure Nginx is running
+  service:
+    name: nginx
+    state: started
+    enabled: yes
+  become: yes
+```
+
+### Template Module
+
+Create a configuration file from a Jinja2 template. In the template file, `{{ page_title }}` is replaced with the variable value.
+
+```yaml
+- name: Create a website page from a template
+  template:
+    src: templates/index.html.j2
+    dest: /var/www/html/index.html
+    mode: '0644'
+  become: yes
+```
+
+### User Module
+
+Create a user only if the user does not already exist. This is safer and more repeatable than running `useradd` with the `shell` module.
+
+```yaml
+- name: Create an application user
+  user:
+    name: appuser
+    state: present
+    create_home: yes
+  become: yes
+```
+
+## Notes About Earlier Examples
+
+- **Fetch:** The default for `fail_on_missing` is `yes`. A missing source file fails the task for that host. Set `fail_on_missing=no` when a missing file should be ignored.
+- **Command:** A read-only command such as `df -h` can still show `CHANGED` because Ansible cannot know whether an arbitrary command changed the system. For a read-only command in a playbook, use `changed_when: false`. For system changes, prefer an Ansible module that describes the required state.
+- **User creation:** The earlier user example uses `shell` and ignores errors. Use the `user` module example above to create users in a repeatable way.
